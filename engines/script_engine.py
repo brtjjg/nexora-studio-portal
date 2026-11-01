@@ -48,8 +48,13 @@ class ScriptEngine:
         self.queue_next_step(project_id)
 
     def queue_next_step(self, project_id):
-        from core.job_manager import JobManager
-        jm = JobManager(self.db)
-        # Once script is done, we need Voice and Graphics
-        jm.queue_job(project_id, 'voice')
-        jm.queue_job(project_id, 'graphics')
+    from core.job_manager import JobManager
+    jm = JobManager(self.db)
+    # Once script is done, we need Voice and Graphics
+    jm.queue_job(project_id, 'voice')
+    jm.queue_job(project_id, 'graphics')
+    
+    # NEW: Once Voice and Graphics are done, we need to render the final video.
+    # In a real production environment, you would use Celery to wait for the first two.
+    # For this setup, we queue it last, and the Render Engine checks if files exist.
+    jm.queue_job(project_id, 'render')
