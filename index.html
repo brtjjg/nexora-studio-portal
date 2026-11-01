@@ -211,7 +211,22 @@
         const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
         if (!prodRes.ok) throw new Error(`Productions failed: ${prodRes.status}`);
         const prods = await prodRes.json();
-        
+
+        if (!prods.items || prods.items.length === 0) {
+    list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
+} else {
+    list.innerHTML = prods.items.map(p => `
+        <tr>
+            <td>${p.title}</td>
+            <td><span style="color: ${p.status === 'ready' ? 'var(--green)' : p.status === 'approved' ? 'var(--accent)' : 'var(--red)'}">${p.status.toUpperCase()}</span></td>
+            <td>
+                ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color: var(--accent); margin-right: 10px;">▶ Play</a>` : '—'}
+                ${p.status === 'ready' ? `<button onclick="approveVideo('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">Approve</button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
         const list = document.getElementById('productionsList');
         if (!prods.items || prods.items.length === 0) {
             list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
@@ -262,6 +277,27 @@
             } catch (e) {
                 alert('Error: ' + e.message);
             }
+        }
+
+        async function approveVideo(id) {
+    if (!confirm('Approve this video? It will instantly go live on the Academy student dashboard.')) return;
+    
+    try {
+        const res = await fetch(`${API}/studio/approve/${id}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        if (res.ok) {
+            alert('✅ Video approved and published to the Academy!');
+            loadData(); // Refresh the table
+        } else {
+            const err = await res.json();
+            alert('Failed: ' + err.error);
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
         }
 
         function logout() {
