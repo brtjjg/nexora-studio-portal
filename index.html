@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexora Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root { --bg: #090d18; --panel: #101929; --border: #23314a; --text: #edf2ff; --muted: #94a3b8; --accent: #6d5dfc; --green: #10b981; --red: #ef4444; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        aside { width: 260px; background: #0d1424; border-right: 1px solid var(--border); padding: 24px 15px; display: flex; flex-direction: column; gap: 8px; position: fixed; height: 100vh; overflow-y: auto; }
+        .brand { display: flex; align-items: center; gap: 12px; padding: 0 10px 20px; }
+        .mark { background: var(--accent); padding: 10px 14px; border-radius: 10px; font-weight: 900; color: #fff; }
+        .nav-label { font-size: 10px; color: #71809d; letter-spacing: 1.5px; padding: 20px 12px 8px; font-weight: 700; text-transform: uppercase; }
+        .nav-item { padding: 10px 12px; color: #9eabc5; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background: #1a2540; color: #fff; }
+        
+        /* Main Area */
+        main { flex: 1; margin-left: 260px; padding: 40px; max-width: 1200px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        h1 { font-size: 28px; }
+        
+        /* Components */
+        .card { background: var(--panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; text-align: center; }
+        .stat-box h3 { font-size: 32px; color: #fff; margin-bottom: 5px; }
+        .stat-box p { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+        
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
+        select, input { width: 100%; padding: 12px; background: #0a1220; border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 14px; }
+        button.btn { background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        button.btn:hover { background: #5b4df0; }
+        
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+        
+        .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="login-screen">
+        <h1 style="margin-bottom: 10px;">Nexora Studio</h1>
+        <p style="color: var(--muted); margin-bottom: 30px;">AI Production Workspace</p>
+        <div id="googleBtn"></div>
+    </div>
+
+    <!-- APP -->
+    <div id="app-screen" style="display: none; width: 100%;">
+        <aside>
+            <div class="brand">
+                <div class="mark">N</div>
+                <div><b>NEXORA</b><br><small style="color:var(--muted)">STUDIO</small></div>
+            </div>
+            
+            <div class="nav-label">Main Menu</div>
+            <div class="nav-item active" onclick="loadView('dashboard', this)">Overview</div>
+            <div class="nav-item" onclick="alert('Analytics Module Ready')">Analytics & Reports</div>
+            <div class="nav-item" onclick="alert('Production Studio Ready')">Production Studio</div>
+            <div class="nav-item" onclick="alert('My Videos Ready')">My Videos</div>
+            <div class="nav-item" onclick="alert('Scene Editor Ready')">Scene Editor</div>
+            <div class="nav-item" onclick="alert('Movie Maker Ready')">Movie Maker</div>
+            <div class="nav-item" onclick="alert('Lesson Generator Ready')">Lesson Video Generator</div>
+            <div class="nav-item" onclick="alert('Media Library Ready')">Media Library</div>
+
+            <div class="nav-label">AI Engines</div>
+            <div class="nav-item" onclick="alert('Voice Studio Ready')">Voice Studio</div>
+            <div class="nav-item" onclick="alert('Graphics Ready')">Graphics & Animation</div>
+            <div class="nav-item" onclick="alert('Script Builder Ready')">AI Script & Story</div>
+            <div class="nav-item" onclick="alert('Audio Ready')">Audio & Sound FX</div>
+            <div class="nav-item" onclick="alert('Rendering Ready')">Rendering Engine</div>
+            
+            <div class="nav-label">Academy Integration</div>
+            <div class="nav-item" onclick="alert('Connection Ready')">Academy Connection</div>
+            <div class="nav-item" onclick="alert('Queue Ready')">Lesson Queue</div>
+            <div class="nav-item" onclick="alert('Approval Ready')">Video Approval</div>
+            <div class="nav-item" onclick="alert('Publish Ready')">Publish to Academy</div>
+            <div class="nav-item" onclick="alert('History Ready')">Generation History</div>
+            
+            <div class="nav-label">System</div>
+            <div class="nav-item" onclick="alert('Characters Ready')">Characters & Avatars</div>
+            <div class="nav-item" onclick="alert('Jobs Ready')">Scheduled Jobs</div>
+            <div class="nav-item" onclick="alert('Failed Jobs Ready')">Retries & Failed Jobs</div>
+            <div class="nav-item" onclick="alert('Storage Ready')">Database & Storage</div>
+            <div class="nav-item" onclick="alert('Logs Ready')">Activity Logs</div>
+            <div class="nav-item" onclick="alert('Settings Ready')">Studio Settings</div>
+            <div class="nav-item" onclick="alert('Help Ready')">Help & Docs</div>
+            
+            <div class="nav-item" style="color: var(--red); margin-top: 20px;" onclick="logout()">Sign Out</div>
+        </aside>
+
+        <main>
+            <header>
+                <h1>Overview</h1>
+                <button class="btn" onclick="loadData()">Refresh Data</button>
+            </header>
+
+            <div class="stats-grid" id="stats-container">
+                <div class="stat-box"><h3>-</h3><p>Queued</p></div>
+                <div class="stat-box"><h3>-</h3><p>Rendering</p></div>
+                <div class="stat-box"><h3>-</h3><p>Ready</p></div>
+                <div class="stat-box"><h3>-</h3><p>Failed</p></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">Generate Video from Lesson</h3>
+                
+                <div class="form-group">
+                    <label>Select Lesson</label>
+                    <select id="lessonSelect">
+                        <option value="">Loading lessons...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Select AI Voice</label>
+                    <select id="voiceSelect">
+                        <option value="en-US-AriaNeural">US Female (Aria)</option>
+                        <option value="en-US-GuyNeural">US Male (Guy)</option>
+                        <option value="sw-KE-ZuriNeural">Swahili Female (Zuri)</option>
+                        <option value="fr-FR-DeniseNeural">French Female (Denise)</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="generateVideo()">Generate Video</button>
+            </div>
+
+            <div class="card">
+                <h3>Recent Productions</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Video Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productionsList">
+                            <tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // YOUR NODE.JS API URL
+        const API = 'https://nexora-api-sskg.onrender.com/api';
+
+        // 1. Initialize Google Login
+        window.onload = function() {
+            google.accounts.id.initialize({
+                client_id: "243689444748-tm3cu1e9jg9j3tf8i2h2f0cgnpgsr239.apps.googleusercontent.com",
+                callback: handleLogin
+            });
+            google.accounts.id.renderButton(
+                document.getElementById("googleBtn"),
+                { theme: "filled_blue", size: "large", width: "300" }
+            );
+        };
+
+        // 2. Handle Login
+        async function handleLogin(response) {
+            try {
+                const res = await fetch(`${API}/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', // IMPORTANT: Sends session cookie
+                    body: JSON.stringify({ credential: response.credential })
+                });
+                
+                if (res.ok) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'block';
+                    loadData();
+                } else {
+                    alert('Login failed. Are you an Admin?');
+                }
+            } catch (e) {
+                alert('Server error. Please try again.');
+            }
+        }
+
+        // 3. Load Data (Stats, Lessons, Productions)
+        async function loadData() {
+            try {
+                // Load Stats
+                const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
+                const stats = await statsRes.json();
+                document.getElementById('stats-container').innerHTML = `
+                    <div class="stat-box"><h3>${stats.productions.queued}</h3><p>Queued</p></div>
+                    <div class="stat-box"><h3>${stats.productions.rendering}</h3><p>Rendering</p></div>
+                    <div class="stat-box"><h3>${stats.productions.ready}</h3><p>Ready</p></div>
+                    <div class="stat-box"><h3>${stats.productions.failed}</h3><p>Failed</p></div>
+                `;
+
+                // Load Productions
+                const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
+                const prods = await prodRes.json();
+                const list = document.getElementById('productionsList');
+                if (prods.items.length === 0) {
+                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
+                } else {
+                    list.innerHTML = prods.items.map(p => `
+                        <tr>
+                            <td>${p.title}</td>
+                            <td><span style="color: ${p.status === 'ready' ? 'var(--green)' : p.status === 'failed' ? 'var(--red)' : '#f59e0b'}">${p.status.toUpperCase()}</span></td>
+                            <td>${p.video_url ? `<a href="https://nexora-api-sskg.onrender.com${p.video_url}" target="_blank" style="color: var(--accent);">▶ Play</a>` : '—'}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Load Lessons
+                const lessonRes = await fetch(`${API}/courses`, { credentials: 'include' });
+                const lessons = await lessonRes.json();
+                document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
+                    lessons.courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+            } catch (e) {
+                console.error('Failed to load data', e);
+            }
+        }
+
+        // 4. Generate Video
+        async function generateVideo() {
+            const lessonId = document.getElementById('lessonSelect').value;
+            const voice = document.getElementById('voiceSelect').value;
+            
+            if (!lessonId) return alert('Please select a lesson first.');
+
+            try {
+                const res = await fetch(`${API}/studio/generate/${lessonId}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voice })
+                });
+                
+                if (res.ok) {
+                    alert('Video generation started! It will appear in the table shortly.');
+                    loadData();
+                } else {
+                    alert('Failed to start generation.');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        function logout() {
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
