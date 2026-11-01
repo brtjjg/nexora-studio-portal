@@ -14,20 +14,15 @@ class JobManager:
         self.trigger_worker(project_id, engine_name)
 
     def trigger_worker(self, project_id, engine_name):
-        print(f"🚀 [Worker] Picked up {engine_name} job for {project_id}")
+    print(f"🚀 [Worker] Picked up {engine_name} job for {project_id}")
+    
+    if engine_name == 'voice':
+        from engines.voice_engine import VoiceEngine
+        engine = VoiceEngine(self.db)
+        engine.process_job(project_id)
         
-        if engine_name == 'voice':
-            # Import here to avoid circular imports
-            from engines.voice_engine import VoiceEngine
-            engine = VoiceEngine(self.db)
-            engine.process_job(project_id)
-            
-        elif engine_name == 'graphics':
-            # We will build this in the next phase!
-            print("🎨 [Graphics Engine] Not built yet, skipping for now.")
-            cursor = self.db.cursor()
-            cursor.execute("""
-                UPDATE studio_jobs SET status = 'done' 
-                WHERE project_id = %s AND engine_name = 'graphics'
-            """, (project_id,))
-            self.db.commit()
+    elif engine_name == 'graphics':
+        # NEW: Trigger the Graphics Engine!
+        from engines.graphics_engine import GraphicsEngine
+        engine = GraphicsEngine(self.db)
+        engine.process_job(project_id)
