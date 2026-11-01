@@ -68,37 +68,20 @@
             </div>
             
             <div class="nav-label">Main Menu</div>
-            <div class="nav-item active" onclick="loadView('dashboard', this)">Overview</div>
-            <div class="nav-item" onclick="alert('Analytics Module Ready')">Analytics & Reports</div>
-            <div class="nav-item" onclick="alert('Production Studio Ready')">Production Studio</div>
-            <div class="nav-item" onclick="alert('My Videos Ready')">My Videos</div>
-            <div class="nav-item" onclick="alert('Scene Editor Ready')">Scene Editor</div>
-            <div class="nav-item" onclick="alert('Movie Maker Ready')">Movie Maker</div>
-            <div class="nav-item" onclick="alert('Lesson Generator Ready')">Lesson Video Generator</div>
-            <div class="nav-item" onclick="alert('Media Library Ready')">Media Library</div>
-
+            <div class="nav-item active">Overview</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Analytics & Reports</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Production Studio</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">My Videos</div>
+            
             <div class="nav-label">AI Engines</div>
-            <div class="nav-item" onclick="alert('Voice Studio Ready')">Voice Studio</div>
-            <div class="nav-item" onclick="alert('Graphics Ready')">Graphics & Animation</div>
-            <div class="nav-item" onclick="alert('Script Builder Ready')">AI Script & Story</div>
-            <div class="nav-item" onclick="alert('Audio Ready')">Audio & Sound FX</div>
-            <div class="nav-item" onclick="alert('Rendering Ready')">Rendering Engine</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Voice Studio</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Graphics & Animation</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Rendering Engine</div>
             
             <div class="nav-label">Academy Integration</div>
-            <div class="nav-item" onclick="alert('Connection Ready')">Academy Connection</div>
-            <div class="nav-item" onclick="alert('Queue Ready')">Lesson Queue</div>
-            <div class="nav-item" onclick="alert('Approval Ready')">Video Approval</div>
-            <div class="nav-item" onclick="alert('Publish Ready')">Publish to Academy</div>
-            <div class="nav-item" onclick="alert('History Ready')">Generation History</div>
-            
-            <div class="nav-label">System</div>
-            <div class="nav-item" onclick="alert('Characters Ready')">Characters & Avatars</div>
-            <div class="nav-item" onclick="alert('Jobs Ready')">Scheduled Jobs</div>
-            <div class="nav-item" onclick="alert('Failed Jobs Ready')">Retries & Failed Jobs</div>
-            <div class="nav-item" onclick="alert('Storage Ready')">Database & Storage</div>
-            <div class="nav-item" onclick="alert('Logs Ready')">Activity Logs</div>
-            <div class="nav-item" onclick="alert('Settings Ready')">Studio Settings</div>
-            <div class="nav-item" onclick="alert('Help Ready')">Help & Docs</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Academy Connection</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Video Approval</div>
+            <div class="nav-item" onclick="alert('Coming Soon')">Publish to Academy</div>
             
             <div class="nav-item" style="color: var(--red); margin-top: 20px;" onclick="logout()">Sign Out</div>
         </aside>
@@ -160,6 +143,7 @@
     </div>
 
     <script>
+        // YOUR NODE.JS API URL
         const API = 'https://nexora-api-sskg.onrender.com/api';
         let pollInterval = null;
 
@@ -202,73 +186,74 @@
             try {
                 // Load Stats
                 const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
-                if (!statsRes.ok) throw new Error("Dashboard endpoint failed");
-                const stats = await statsRes.json();
-                
-                document.getElementById('stats-container').innerHTML = `
-                    <div class="stat-box"><h3>${stats.productions?.queued || 0}</h3><p>Queued</p></div>
-                    <div class="stat-box"><h3>${stats.productions?.rendering || 0}</h3><p>Rendering</p></div>
-                    <div class="stat-box"><h3>${stats.productions?.ready || 0}</h3><p>Ready</p></div>
-                    <div class="stat-box"><h3>${stats.productions?.failed || 0}</h3><p>Failed</p></div>
-                `;
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    document.getElementById('stats-container').innerHTML = `
+                        <div class="stat-box"><h3>${stats.productions?.queued || 0}</h3><p>Queued</p></div>
+                        <div class="stat-box"><h3>${stats.productions?.rendering || 0}</h3><p>Rendering</p></div>
+                        <div class="stat-box"><h3>${stats.productions?.ready || 0}</h3><p>Ready</p></div>
+                        <div class="stat-box"><h3>${stats.productions?.failed || 0}</h3><p>Failed</p></div>
+                    `;
+                }
 
                 // Load Productions
                 const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
-                if (!prodRes.ok) throw new Error("Productions endpoint failed");
-                const prods = await prodRes.json();
-                
-                const list = document.getElementById('productionsList');
-                let hasRendering = false; // Track if we need to poll
+                if (prodRes.ok) {
+                    const prods = await prodRes.json();
+                    const list = document.getElementById('productionsList');
+                    let hasRendering = false;
 
-                if (!prods.items || prods.items.length === 0) {
-                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
-                } else {
-                    list.innerHTML = prods.items.map(p => {
-                        if (p.status === 'rendering') hasRendering = true;
+                    if (!prods.items || prods.items.length === 0) {
+                        list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
+                    } else {
+                        list.innerHTML = prods.items.map(p => {
+                            if (p.status === 'rendering') hasRendering = true;
 
-                        let statusHTML = '';
-                        if (p.status === 'rendering') statusHTML = `<span style="color: var(--yellow); font-weight: 600;"><span class="spinner"></span> RENDERING...</span>`;
-                        else if (p.status === 'ready') statusHTML = `<span style="color: var(--green); font-weight: 600;">READY</span>`;
-                        else if (p.status === 'approved') statusHTML = `<span style="color: var(--accent); font-weight: 600;">APPROVED</span>`;
-                        else statusHTML = `<span style="color: var(--red); font-weight: 600;">FAILED</span>`;
+                            let statusHTML = '';
+                            if (p.status === 'rendering') statusHTML = `<span style="color: var(--yellow); font-weight: 600;"><span class="spinner"></span> RENDERING...</span>`;
+                            else if (p.status === 'ready') statusHTML = `<span style="color: var(--green); font-weight: 600;">READY</span>`;
+                            else if (p.status === 'approved') statusHTML = `<span style="color: var(--accent); font-weight: 600;">APPROVED</span>`;
+                            else statusHTML = `<span style="color: var(--red); font-weight: 600;">FAILED</span>`;
 
-                        return `
-                        <tr>
-                            <td>${p.title}</td>
-                            <td>${statusHTML}</td>
-                            <td style="display: flex; gap: 10px; align-items: center;">
-                                ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">▶ Play</a>` : '—'}
-                                
-                                ${p.status === 'ready' ? 
-                                    `<button onclick="approveVideo('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">✅ Approve</button>` 
-                                    : ''}
+                            return `
+                            <tr>
+                                <td>${p.title}</td>
+                                <td>${statusHTML}</td>
+                                <td style="display: flex; gap: 10px; align-items: center;">
+                                    ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">▶ Play</a>` : '—'}
                                     
-                                ${p.status === 'approved' ? 
-                                    `<span style="color: var(--accent); font-size: 12px; font-weight: bold;"><i class="fas fa-check-circle"></i> Live on Academy</span>` 
-                                    : ''}
-                            </td>
-                        </tr>
-                    `}).join('');
-                }
+                                    ${p.status === 'ready' ? 
+                                        `<button onclick="approveVideo('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">✅ Approve</button>` 
+                                        : ''}
+                                        
+                                    ${p.status === 'approved' ? 
+                                        `<span style="color: var(--accent); font-size: 12px; font-weight: bold;">Live on Academy</span>` 
+                                        : ''}
+                                </td>
+                            </tr>
+                        `}).join('');
+                    }
 
-                // Setup Auto-Polling if anything is rendering
-                if (hasRendering && !pollInterval) {
-                    console.log("Auto-polling started...");
-                    pollInterval = setInterval(loadData, 15000); // Check every 15 seconds
-                } else if (!hasRendering && pollInterval) {
-                    console.log("Auto-polling stopped.");
-                    clearInterval(pollInterval);
-                    pollInterval = null;
+                    // Setup Auto-Polling if anything is rendering
+                    if (hasRendering && !pollInterval) {
+                        console.log("Auto-polling started...");
+                        pollInterval = setInterval(loadData, 15000); // Check every 15 seconds
+                    } else if (!hasRendering && pollInterval) {
+                        console.log("Auto-polling stopped.");
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                    }
                 }
 
                 // Load Lessons
                 const lessonRes = await fetch(`${API}/courses`, { credentials: 'include' });
-                if (!lessonRes.ok) throw new Error("Courses endpoint failed");
-                const lessons = await lessonRes.json();
-                const courseList = lessons.courses || lessons; 
-                
-                document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
-                    courseList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+                if (lessonRes.ok) {
+                    const lessons = await lessonRes.json();
+                    const courseList = lessons.courses || lessons; 
+                    
+                    document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
+                        courseList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+                }
 
             } catch (e) {
                 console.error('Failed to load data', e);
@@ -295,7 +280,6 @@
                 });
                 
                 if (res.ok) {
-                    // Instantly refresh data to show the 'RENDERING' status
                     await loadData();
                 } else {
                     const err = await res.json();
@@ -321,7 +305,7 @@
                 
                 if (res.ok) {
                     alert('✅ Video approved and published to the Academy!');
-                    loadData(); // Refresh the table
+                    loadData(); 
                 } else {
                     const err = await res.json();
                     alert('❌ Failed to approve video: ' + (err.error || 'Unknown error'));
