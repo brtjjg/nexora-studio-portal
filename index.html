@@ -194,43 +194,49 @@
 
         // 3. Load Data (Stats, Lessons, Productions)
         async function loadData() {
-            try {
-                // Load Stats
-                const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
-                const stats = await statsRes.json();
-                document.getElementById('stats-container').innerHTML = `
-                    <div class="stat-box"><h3>${stats.productions.queued}</h3><p>Queued</p></div>
-                    <div class="stat-box"><h3>${stats.productions.rendering}</h3><p>Rendering</p></div>
-                    <div class="stat-box"><h3>${stats.productions.ready}</h3><p>Ready</p></div>
-                    <div class="stat-box"><h3>${stats.productions.failed}</h3><p>Failed</p></div>
-                `;
+    try {
+        // 1. Fetch Stats
+        const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
+        if (!statsRes.ok) throw new Error(`Dashboard failed: ${statsRes.status}`);
+        const stats = await statsRes.json();
+        
+        document.getElementById('stats-container').innerHTML = `
+            <div class="stat-box"><h3>${stats.productions?.queued || 0}</h3><p>Queued</p></div>
+            <div class="stat-box"><h3>${stats.productions?.rendering || 0}</h3><p>Rendering</p></div>
+            <div class="stat-box"><h3>${stats.productions?.ready || 0}</h3><p>Ready</p></div>
+            <div class="stat-box"><h3>${stats.productions?.failed || 0}</h3><p>Failed</p></div>
+        `;
 
-                // Load Productions
-                const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
-                const prods = await prodRes.json();
-                const list = document.getElementById('productionsList');
-                if (prods.items.length === 0) {
-                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
-                } else {
-                    list.innerHTML = prods.items.map(p => `
-                        <tr>
-                            <td>${p.title}</td>
-                            <td><span style="color: ${p.status === 'ready' ? 'var(--green)' : p.status === 'failed' ? 'var(--red)' : '#f59e0b'}">${p.status.toUpperCase()}</span></td>
-                            <td>${p.video_url ? `<a href="https://nexora-api-sskg.onrender.com${p.video_url}" target="_blank" style="color: var(--accent);">▶ Play</a>` : '—'}</td>
-                        </tr>
-                    `).join('');
-                }
-
-                // Load Lessons
-                const lessonRes = await fetch(`${API}/courses`, { credentials: 'include' });
-                const lessons = await lessonRes.json();
-                document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
-                    lessons.courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-
-            } catch (e) {
-                console.error('Failed to load data', e);
-            }
+        // 2. Fetch Productions
+        const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
+        if (!prodRes.ok) throw new Error(`Productions failed: ${prodRes.status}`);
+        const prods = await prodRes.json();
+        
+        const list = document.getElementById('productionsList');
+        if (!prods.items || prods.items.length === 0) {
+            list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
+        } else {
+            // (We will update this table in Phase 4)
         }
+
+        // 3. Fetch Lessons
+        const lessonRes = await fetch(`${API}/courses`, { credentials: 'include' });
+        if (!lessonRes.ok) throw new Error(`Lessons failed: ${lessonRes.status}`);
+        const lessons = await lessonRes.json();
+        
+        console.log("Lessons Data Received:", lessons); // Check your browser console!
+
+        // Handle both { courses: [] } and just []
+        const courseList = lessons.courses || lessons; 
+        
+        document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
+            courseList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+    } catch (e) {
+        console.error('Failed to load data:', e);
+        alert('Data Load Error: ' + e.message + '\n\nCheck the browser console (F12) for details.');
+    }
+}
 
         // 4. Generate Video
         async function generateVideo() {
