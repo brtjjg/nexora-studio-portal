@@ -12,7 +12,7 @@
         body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
         
         /* Sidebar */
-        aside { width: 260px; background: #0d1424; border-right: 1px solid var(--border); padding: 24px 15px; display: flex; flex-direction: column; gap: 8px; position: fixed; height: 100vh; overflow-y: auto; }
+        aside { width: 260px; background: #0d1424; border-right: 1px solid var(--border); padding: 24px 15px; display: flex; flex-direction: column; gap: 8px; position: fixed; height: 100vh; overflow-y: auto; z-index: 10;}
         .brand { display: flex; align-items: center; gap: 12px; padding: 0 10px 20px; }
         .mark { background: var(--accent); padding: 10px 14px; border-radius: 10px; font-weight: 900; color: #fff; }
         .nav-label { font-size: 10px; color: #71809d; letter-spacing: 1.5px; padding: 20px 12px 8px; font-weight: 700; text-transform: uppercase; }
@@ -21,6 +21,12 @@
         
         /* Main Area */
         main { flex: 1; margin-left: 260px; padding: 40px; max-width: 1200px; }
+        
+        /* Pages */
+        .page { display: none; animation: fadeIn 0.3s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         h1 { font-size: 28px; }
         
@@ -37,6 +43,8 @@
         button.btn { background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; }
         button.btn:hover { background: #5b4df0; }
         button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.btn-danger { background: var(--red); }
+        button.btn-success { background: var(--green); }
         
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -45,9 +53,20 @@
         
         .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; }
         
-        /* Spinner for Rendering */
+        /* Spinner */
         .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--yellow); animation: spin 1s ease-in-out infinite; margin-right: 6px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; width: 90%; max-width: 800px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 20px; right: 20px; cursor: pointer; color: var(--muted); font-size: 24px; }
+        .close-modal:hover { color: white; }
+        .video-container { background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; margin-bottom: 20px; }
+        .video-container video { width: 100%; height: 100%; object-fit: contain; }
+        .script-box { background: #0a1220; padding: 15px; border-radius: 8px; color: var(--muted); font-size: 14px; line-height: 1.6; max-height: 150px; overflow-y: auto; margin-bottom: 20px; border-left: 4px solid var(--accent); }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
     </style>
 </head>
 <body>
@@ -68,98 +87,130 @@
             </div>
             
             <div class="nav-label">Main Menu</div>
-            <div class="nav-item active">Overview</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Analytics & Reports</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Production Studio</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">My Videos</div>
-            
-            <div class="nav-label">AI Engines</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Voice Studio</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Graphics & Animation</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Rendering Engine</div>
-            
-            <div class="nav-label">Academy Integration</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Academy Connection</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Video Approval</div>
-            <div class="nav-item" onclick="alert('Coming Soon')">Publish to Academy</div>
+            <div class="nav-item active" onclick="showPage('page-dashboard', this)">Overview</div>
+            <div class="nav-item" onclick="showPage('page-production', this)">Production Studio</div>
+            <div class="nav-item" onclick="showPage('page-approval', this)">Video Approval</div>
             
             <div class="nav-item" style="color: var(--red); margin-top: 20px;" onclick="logout()">Sign Out</div>
         </aside>
 
         <main>
-            <header>
-                <h1>Overview</h1>
-                <button class="btn" onclick="loadData()">Refresh Data</button>
-            </header>
+            <!-- PAGE 1: OVERVIEW -->
+            <div id="page-dashboard" class="page active">
+                <header>
+                    <h1>Overview</h1>
+                    <button class="btn" onclick="loadData()">Refresh Data</button>
+                </header>
 
-            <div class="stats-grid" id="stats-container">
-                <div class="stat-box"><h3>-</h3><p>Queued</p></div>
-                <div class="stat-box"><h3>-</h3><p>Rendering</p></div>
-                <div class="stat-box"><h3>-</h3><p>Ready</p></div>
-                <div class="stat-box"><h3>-</h3><p>Failed</p></div>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-bottom: 20px;">Generate Video from Lesson</h3>
-                
-                <div class="form-group">
-                    <label>Select Lesson</label>
-                    <select id="lessonSelect">
-                        <option value="">Loading lessons...</option>
-                    </select>
+                <div class="stats-grid" id="stats-container">
+                    <div class="stat-box"><h3>-</h3><p>Queued</p></div>
+                    <div class="stat-box"><h3>-</h3><p>Rendering</p></div>
+                    <div class="stat-box"><h3>-</h3><p>Ready</p></div>
+                    <div class="stat-box"><h3>-</h3><p>Failed</p></div>
                 </div>
 
-                <div class="form-group">
-                    <label>Select AI Voice</label>
-                    <select id="voiceSelect">
-                        <option value="en-US-AriaNeural">US Female (Aria)</option>
-                        <option value="en-US-GuyNeural">US Male (Guy)</option>
-                        <option value="sw-KE-ZuriNeural">Swahili Female (Zuri)</option>
-                        <option value="fr-FR-DeniseNeural">French Female (Denise)</option>
-                    </select>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">Recent Productions</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Title</th><th>Status</th><th>Video Link / Actions</th></tr></thead>
+                            <tbody id="productionsListDashboard"></tbody>
+                        </table>
+                    </div>
                 </div>
-
-                <button class="btn" id="generateBtn" onclick="generateVideo()">Generate Video</button>
             </div>
 
-            <div class="card">
-                <h3>Recent Productions</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Status</th>
-                                <th>Video Link / Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productionsList">
-                            <tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>
-                        </tbody>
-                    </table>
+            <!-- PAGE 2: PRODUCTION STUDIO -->
+            <div id="page-production" class="page">
+                <header><h1>Production Studio</h1></header>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">Generate Video from Lesson</h3>
+                    <div class="form-group">
+                        <label>Select Lesson</label>
+                        <select id="lessonSelect"><option value="">Loading lessons...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Select AI Voice</label>
+                        <select id="voiceSelect">
+                            <option value="en-US-AriaNeural">US Female (Aria)</option>
+                            <option value="en-US-GuyNeural">US Male (Guy)</option>
+                            <option value="sw-KE-ZuriNeural">Swahili Female (Zuri)</option>
+                        </select>
+                    </div>
+                    <button class="btn" id="generateBtn" onclick="generateVideo()">Generate Video</button>
+                </div>
+            </div>
+
+            <!-- PAGE 3: VIDEO APPROVAL -->
+            <div id="page-approval" class="page">
+                <header>
+                    <h1>Video Approval</h1>
+                    <button class="btn" onclick="loadData()">Refresh Data</button>
+                </header>
+                <div class="card">
+                    <p style="color: var(--muted); margin-bottom: 16px;">Click a video to watch, review the script, and approve.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Title</th><th>Status</th><th>Video Link / Actions</th></tr></thead>
+                            <tbody id="productionsListApproval"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <script>
-        // YOUR NODE.JS API URL
-        const API = 'https://nexora-api-sskg.onrender.com/api';
-        let pollInterval = null;
+    <!-- REVIEW MODAL -->
+    <div id="reviewModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle" style="margin-bottom: 15px;">Video Review</h2>
+            
+            <div class="video-container">
+                <video id="modalVideo" controls></video>
+            </div>
+            
+            <label style="margin-bottom: 5px; display: block;">Script Used (Lesson Notes):</label>
+            <div id="modalScript" class="script-box"></div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="deleteVideo()">Reject & Delete</button>
+                <button class="btn btn-success" id="modalApproveBtn" onclick="approveVideoFromModal()">Approve & Publish</button>
+            </div>
+        </div>
+    </div>
 
-        // 1. Initialize Google Login
+    <script>
+        // --- THE TWO BACKENDS ---
+        const API = 'https://nexora-api-sskg.onrender.com/api'; // Node.js Academy Backend
+        const PYTHON_BRAIN_URL = 'https://YOUR-PYTHON-APP-NAME.onrender.com'; // <--- UPDATE THIS with your Python Render URL!
+
+        let pollInterval = null;
+        let allProductions = [];
+        let currentReviewId = null;
+
+        // Helper function to ensure video URLs point to the Python server
+        function getFullVideoUrl(url) {
+            if (!url) return '';
+            if (url.startsWith('http')) return url; // Already a full URL
+            return `${PYTHON_BRAIN_URL}${url}`; // It's a relative path from the Python server
+        }
+
         window.onload = function() {
             google.accounts.id.initialize({
                 client_id: "243689444748-tm3cu1e9jg9j3tf8i2h2f0cgnpgsr239.apps.googleusercontent.com",
                 callback: handleLogin
             });
-            google.accounts.id.renderButton(
-                document.getElementById("googleBtn"),
-                { theme: "filled_blue", size: "large", width: "300" }
-            );
+            google.accounts.id.renderButton(document.getElementById("googleBtn"), { theme: "filled_blue", size: "large", width: "300" });
         };
 
-        // 2. Handle Login
+        function showPage(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if (el) el.classList.add('active');
+        }
+
         async function handleLogin(response) {
             try {
                 const res = await fetch(`${API}/auth/google`, {
@@ -168,23 +219,16 @@
                     credentials: 'include',
                     body: JSON.stringify({ credential: response.credential })
                 });
-                
                 if (res.ok) {
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('app-screen').style.display = 'block';
                     loadData();
-                } else {
-                    alert('Login failed. Are you an Admin?');
-                }
-            } catch (e) {
-                alert('Server error. Please try again.');
-            }
+                } else { alert('Login failed. Are you an Admin?'); }
+            } catch (e) { alert('Server error.'); }
         }
 
-        // 3. Load Data (Stats, Productions, Lessons)
         async function loadData() {
             try {
-                // Load Stats
                 const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
                 if (statsRes.ok) {
                     const stats = await statsRes.json();
@@ -196,128 +240,151 @@
                     `;
                 }
 
-                // Load Productions
                 const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
                 if (prodRes.ok) {
                     const prods = await prodRes.json();
-                    const list = document.getElementById('productionsList');
-                    let hasRendering = false;
-
-                    if (!prods.items || prods.items.length === 0) {
-                        list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
-                    } else {
-                        list.innerHTML = prods.items.map(p => {
-                            if (p.status === 'rendering') hasRendering = true;
-
-                            let statusHTML = '';
-                            if (p.status === 'rendering') statusHTML = `<span style="color: var(--yellow); font-weight: 600;"><span class="spinner"></span> RENDERING...</span>`;
-                            else if (p.status === 'ready') statusHTML = `<span style="color: var(--green); font-weight: 600;">READY</span>`;
-                            else if (p.status === 'approved') statusHTML = `<span style="color: var(--accent); font-weight: 600;">APPROVED</span>`;
-                            else statusHTML = `<span style="color: var(--red); font-weight: 600;">FAILED</span>`;
-
-                            return `
-                            <tr>
-                                <td>${p.title}</td>
-                                <td>${statusHTML}</td>
-                                <td style="display: flex; gap: 10px; align-items: center;">
-                                    ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">▶ Play</a>` : '—'}
-                                    
-                                    ${p.status === 'ready' ? 
-                                        `<button onclick="approveVideo('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">✅ Approve</button>` 
-                                        : ''}
-                                        
-                                    ${p.status === 'approved' ? 
-                                        `<span style="color: var(--accent); font-size: 12px; font-weight: bold;">Live on Academy</span>` 
-                                        : ''}
-                                </td>
-                            </tr>
-                        `}).join('');
-                    }
-
-                    // Setup Auto-Polling if anything is rendering
-                    if (hasRendering && !pollInterval) {
-                        console.log("Auto-polling started...");
-                        pollInterval = setInterval(loadData, 15000); // Check every 15 seconds
-                    } else if (!hasRendering && pollInterval) {
-                        console.log("Auto-polling stopped.");
-                        clearInterval(pollInterval);
-                        pollInterval = null;
-                    }
+                    allProductions = prods.items || [];
+                    renderTables();
                 }
 
-                // Load Lessons
                 const lessonRes = await fetch(`${API}/courses`, { credentials: 'include' });
                 if (lessonRes.ok) {
                     const lessons = await lessonRes.json();
                     const courseList = lessons.courses || lessons; 
-                    
                     document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
                         courseList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
                 }
+            } catch (e) { console.error(e); }
+        }
 
-            } catch (e) {
-                console.error('Failed to load data', e);
+        function renderTables() {
+            let hasRendering = false;
+            
+            const buildRows = (filterFn) => {
+                const filtered = allProductions.filter(filterFn);
+                if (filtered.length === 0) return null;
+
+                return filtered.map(p => {
+                    if (p.status === 'rendering') hasRendering = true;
+
+                    let statusHTML = '';
+                    if (p.status === 'rendering') statusHTML = `<span style="color: var(--yellow); font-weight: 600;"><span class="spinner"></span> RENDERING...</span>`;
+                    else if (p.status === 'ready') statusHTML = `<span style="color: var(--green); font-weight: 600;">READY</span>`;
+                    else if (p.status === 'approved') statusHTML = `<span style="color: var(--accent); font-weight: 600;">APPROVED</span>`;
+                    else statusHTML = `<span style="color: var(--red); font-weight: 600;">FAILED</span>`;
+
+                    // Build action buttons based on status
+                    let actionHTML = '—';
+                    if (p.status === 'ready') {
+                        actionHTML = `<button onclick="openReviewModal('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Review Video</button>`;
+                    } else if (p.status === 'approved') {
+                        const fullPlayUrl = getFullVideoUrl(p.video_url);
+                        actionHTML = `<a href="${fullPlayUrl}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">▶ Play</a> <span style="color: var(--accent); font-size: 12px; font-weight: bold; margin-left: 10px;">Live</span>`;
+                    } else if (p.status === 'rendering') {
+                         actionHTML = `<span style="color: var(--muted); font-size: 12px;">AI is thinking...</span>`;
+                    }
+
+                    return `<tr><td>${p.title}</td><td>${statusHTML}</td><td>${actionHTML}</td></tr>`;
+                }).join('');
+            };
+
+            document.getElementById('productionsListDashboard').innerHTML = buildRows(() => true) || `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
+            document.getElementById('productionsListApproval').innerHTML = buildRows(p => p.status === 'ready') || `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos ready for approval.</td></tr>`;
+
+            if (hasRendering && !pollInterval) {
+                pollInterval = setInterval(loadData, 15000); 
+            } else if (!hasRendering && pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
             }
         }
 
-        // 4. Generate Video
+        // --- VIDEO REVIEW MODAL LOGIC ---
+        async function openReviewModal(id) {
+            currentReviewId = id;
+            document.getElementById('reviewModal').classList.add('active');
+            document.getElementById('modalTitle').textContent = "Loading...";
+            document.getElementById('modalVideo').src = "";
+            document.getElementById('modalScript').textContent = "Loading script...";
+            
+            try {
+                // Note: If your Node.js backend doesn't have the /production/:id route, this might fail.
+                // Make sure Node.js `/studio/production/:id` exists to fetch single details.
+                const res = await fetch(`${API}/studio/production/${id}`, { credentials: 'include' });
+                const data = await res.json();
+                if (res.ok) {
+                    const p = data.production;
+                    document.getElementById('modalTitle').textContent = p.title;
+                    
+                    // FIX: Prepend the Python Brain URL to the video path
+                    document.getElementById('modalVideo').src = getFullVideoUrl(p.video_url);
+                    
+                    document.getElementById('modalScript').textContent = p.notes || "No script notes found.";
+                }
+            } catch (e) {
+                alert("Failed to load video details.");
+                closeModal();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('reviewModal').classList.remove('active');
+            document.getElementById('modalVideo').pause();
+            currentReviewId = null;
+        }
+
+        async function approveVideoFromModal() {
+            if (!currentReviewId) return;
+            if (!confirm('Approve this video? It will instantly go live on the Academy.')) return;
+            
+            try {
+                const res = await fetch(`${API}/studio/approve/${currentReviewId}`, { method: 'POST', credentials: 'include' });
+                if (res.ok) {
+                    alert('✅ Video approved and published!');
+                    closeModal();
+                    loadData(); 
+                } else { alert('❌ Failed to approve.'); }
+            } catch (e) { alert('Error.'); }
+        }
+
+        async function deleteVideo() {
+            if (!currentReviewId) return;
+            if (!confirm('Reject and delete this video?')) return;
+
+            try {
+                const res = await fetch(`${API}/studio/production/${currentReviewId}`, { method: 'DELETE', credentials: 'include' });
+                if (res.ok) {
+                    alert('🗑️ Video deleted.');
+                    closeModal();
+                    loadData();
+                } else { alert('❌ Failed to delete.'); }
+            } catch (e) { alert('Error.'); }
+        }
+
         async function generateVideo() {
             const lessonId = document.getElementById('lessonSelect').value;
             const voice = document.getElementById('voiceSelect').value;
             const btn = document.getElementById('generateBtn');
+            if (!lessonId) return alert('Select a lesson.');
+            btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending to AI...';
             
-            if (!lessonId) return alert('Please select a lesson first.');
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Sending to AI...';
-
             try {
+                // Sends to Node.js, which forwards to Python Brain
                 const res = await fetch(`${API}/studio/generate/${lessonId}`, {
-                    method: 'POST',
-                    credentials: 'include',
+                    method: 'POST', credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ voice })
                 });
-                
-                if (res.ok) {
-                    await loadData();
-                } else {
-                    const err = await res.json();
-                    alert('Failed: ' + (err.error || 'Unknown error'));
-                }
-            } catch (e) {
-                alert('Error: ' + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Generate Video';
-            }
+                if (res.ok) { 
+                    await loadData(); 
+                    showPage('page-dashboard', document.querySelector('.nav-item')); 
+                } 
+                else { alert('Failed.'); }
+            } catch (e) { alert('Error.'); } 
+            finally { btn.disabled = false; btn.innerHTML = 'Generate Video'; }
         }
 
-        // 5. Approve Video
-        async function approveVideo(productionId) {
-            if (!confirm('Approve this video? It will instantly become live on the student Academy dashboard.')) return;
-            
-            try {
-                const res = await fetch(`${API}/studio/approve/${productionId}`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                
-                if (res.ok) {
-                    alert('✅ Video approved and published to the Academy!');
-                    loadData(); 
-                } else {
-                    const err = await res.json();
-                    alert('❌ Failed to approve video: ' + (err.error || 'Unknown error'));
-                }
-            } catch (e) {
-                alert('Error: ' + e.message);
-            }
-        }
-
-        function logout() {
-            window.location.reload();
-        }
+        function logout() { window.location.reload(); }
     </script>
 </body>
 </html>
