@@ -181,21 +181,25 @@
     </div>
 
     <script>
-        // --- THE TWO BACKENDS ---
-        const API = 'https://nexora-api-sskg.onrender.com/api'; // Node.js Academy Backend
-        const PYTHON_BRAIN_URL = 'https://YOUR-PYTHON-APP-NAME.onrender.com'; // <--- UPDATE THIS with your Python Render URL!
+        // 1. Node.js Backend API (For Auth, Stats, and Database)
+        const API = 'https://nexora-api-sskg.onrender.com/api';
+        
+        // 2. Python Brain URL (For playing the actual rendered .mp4 files)
+        // ⚠️ UPDATE THIS once you deploy the Python app to Render!
+        const PYTHON_BRAIN_URL = 'https://YOUR-PYTHON-APP-NAME.onrender.com'; 
 
         let pollInterval = null;
         let allProductions = [];
         let currentReviewId = null;
 
-        // Helper function to ensure video URLs point to the Python server
+        // Helper to fix relative video URLs coming from Python
         function getFullVideoUrl(url) {
             if (!url) return '';
-            if (url.startsWith('http')) return url; // Already a full URL
-            return `${PYTHON_BRAIN_URL}${url}`; // It's a relative path from the Python server
+            if (url.startsWith('http')) return url; 
+            return `${PYTHON_BRAIN_URL}${url}`; 
         }
 
+        // Initialize Google Auth
         window.onload = function() {
             google.accounts.id.initialize({
                 client_id: "243689444748-tm3cu1e9jg9j3tf8i2h2f0cgnpgsr239.apps.googleusercontent.com",
@@ -204,6 +208,7 @@
             google.accounts.id.renderButton(document.getElementById("googleBtn"), { theme: "filled_blue", size: "large", width: "300" });
         };
 
+        // Page Navigation
         function showPage(pageId, el) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -211,6 +216,7 @@
             if (el) el.classList.add('active');
         }
 
+        // Login
         async function handleLogin(response) {
             try {
                 const res = await fetch(`${API}/auth/google`, {
@@ -227,6 +233,7 @@
             } catch (e) { alert('Server error.'); }
         }
 
+        // Load Data
         async function loadData() {
             try {
                 const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
@@ -257,6 +264,7 @@
             } catch (e) { console.error(e); }
         }
 
+        // Render Tables
         function renderTables() {
             let hasRendering = false;
             
@@ -273,7 +281,6 @@
                     else if (p.status === 'approved') statusHTML = `<span style="color: var(--accent); font-weight: 600;">APPROVED</span>`;
                     else statusHTML = `<span style="color: var(--red); font-weight: 600;">FAILED</span>`;
 
-                    // Build action buttons based on status
                     let actionHTML = '—';
                     if (p.status === 'ready') {
                         actionHTML = `<button onclick="openReviewModal('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Review Video</button>`;
@@ -299,7 +306,7 @@
             }
         }
 
-        // --- VIDEO REVIEW MODAL LOGIC ---
+        // Open Review Modal
         async function openReviewModal(id) {
             currentReviewId = id;
             document.getElementById('reviewModal').classList.add('active');
@@ -308,17 +315,12 @@
             document.getElementById('modalScript').textContent = "Loading script...";
             
             try {
-                // Note: If your Node.js backend doesn't have the /production/:id route, this might fail.
-                // Make sure Node.js `/studio/production/:id` exists to fetch single details.
                 const res = await fetch(`${API}/studio/production/${id}`, { credentials: 'include' });
                 const data = await res.json();
                 if (res.ok) {
                     const p = data.production;
                     document.getElementById('modalTitle').textContent = p.title;
-                    
-                    // FIX: Prepend the Python Brain URL to the video path
                     document.getElementById('modalVideo').src = getFullVideoUrl(p.video_url);
-                    
                     document.getElementById('modalScript').textContent = p.notes || "No script notes found.";
                 }
             } catch (e) {
@@ -333,6 +335,7 @@
             currentReviewId = null;
         }
 
+        // Approve Video
         async function approveVideoFromModal() {
             if (!currentReviewId) return;
             if (!confirm('Approve this video? It will instantly go live on the Academy.')) return;
@@ -347,6 +350,7 @@
             } catch (e) { alert('Error.'); }
         }
 
+        // Delete/Reject Video
         async function deleteVideo() {
             if (!currentReviewId) return;
             if (!confirm('Reject and delete this video?')) return;
@@ -361,15 +365,16 @@
             } catch (e) { alert('Error.'); }
         }
 
+        // Generate Video
         async function generateVideo() {
             const lessonId = document.getElementById('lessonSelect').value;
             const voice = document.getElementById('voiceSelect').value;
             const btn = document.getElementById('generateBtn');
             if (!lessonId) return alert('Select a lesson.');
+            
             btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending to AI...';
             
             try {
-                // Sends to Node.js, which forwards to Python Brain
                 const res = await fetch(`${API}/studio/generate/${lessonId}`, {
                     method: 'POST', credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -379,8 +384,8 @@
                     await loadData(); 
                     showPage('page-dashboard', document.querySelector('.nav-item')); 
                 } 
-                else { alert('Failed.'); }
-            } catch (e) { alert('Error.'); } 
+                else { alert('Failed to start generation.'); }
+            } catch (e) { alert('Error communicating with server.'); } 
             finally { btn.disabled = false; btn.innerHTML = 'Generate Video'; }
         }
 
