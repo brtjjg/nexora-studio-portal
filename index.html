@@ -142,7 +142,7 @@
                             <tr>
                                 <th>Title</th>
                                 <th>Status</th>
-                                <th>Video Link</th>
+                                <th>Video Link / Actions</th>
                             </tr>
                         </thead>
                         <tbody id="productionsList">
@@ -194,64 +194,69 @@
 
         // 3. Load Data (Stats, Lessons, Productions)
         async function loadData() {
-    try {
-        // 1. Fetch Stats
-        const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
-        if (!statsRes.ok) throw new Error(`Dashboard failed: ${statsRes.status}`);
-        const stats = await statsRes.json();
-        
-        document.getElementById('stats-container').innerHTML = `
-            <div class="stat-box"><h3>${stats.productions?.queued || 0}</h3><p>Queued</p></div>
-            <div class="stat-box"><h3>${stats.productions?.rendering || 0}</h3><p>Rendering</p></div>
-            <div class="stat-box"><h3>${stats.productions?.ready || 0}</h3><p>Ready</p></div>
-            <div class="stat-box"><h3>${stats.productions?.failed || 0}</h3><p>Failed</p></div>
-        `;
+            try {
+                // Load Stats
+                const statsRes = await fetch(`${API}/studio/dashboard`, { credentials: 'include' });
+                if (!statsRes.ok) throw new Error("Dashboard endpoint failed");
+                const stats = await statsRes.json();
+                
+                document.getElementById('stats-container').innerHTML = `
+                    <div class="stat-box"><h3>${stats.productions?.queued || 0}</h3><p>Queued</p></div>
+                    <div class="stat-box"><h3>${stats.productions?.rendering || 0}</h3><p>Rendering</p></div>
+                    <div class="stat-box"><h3>${stats.productions?.ready || 0}</h3><p>Ready</p></div>
+                    <div class="stat-box"><h3>${stats.productions?.failed || 0}</h3><p>Failed</p></div>
+                `;
 
-        // 2. Fetch Productions
-        const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
-        if (!prodRes.ok) throw new Error(`Productions failed: ${prodRes.status}`);
-        const prods = await prodRes.json();
+                // Load Productions
+                const prodRes = await fetch(`${API}/studio/productions`, { credentials: 'include' });
+                if (!prodRes.ok) throw new Error("Productions endpoint failed");
+                const prods = await prodRes.json();
+                
+                const list = document.getElementById('productionsList');
+                if (!prods.items || prods.items.length === 0) {
+                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
+                } else {
+                    list.innerHTML = prods.items.map(p => `
+                        <tr>
+                            <td>${p.title}</td>
+                            <td>
+                                <span style="color: ${p.status === 'ready' ? 'var(--green)' : p.status === 'approved' ? 'var(--accent)' : p.status === 'failed' ? 'var(--red)' : '#f59e0b'}">
+                                    ${p.status.toUpperCase()}
+                                </span>
+                            </td>
+                            <td style="display: flex; gap: 10px; align-items: center;">
+                                ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">▶ Play</a>` : '—'}
+                                
+                                ${p.status === 'ready' ? 
+                                    `<button onclick="approveVideo('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">✅ Approve</button>` 
+                                    : ''}
+                                    
+                                ${p.status === 'approved' ? 
+                                    `<span style="color: var(--accent); font-size: 12px; font-weight: bold;"><i class="fas fa-check-circle"></i> Live on Academy</span>` 
+                                    : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                }
 
-        if (!prods.items || prods.items.length === 0) {
-    list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
-} else {
-    list.innerHTML = prods.items.map(p => `
-        <tr>
-            <td>${p.title}</td>
-            <td><span style="color: ${p.status === 'ready' ? 'var(--green)' : p.status === 'approved' ? 'var(--accent)' : 'var(--red)'}">${p.status.toUpperCase()}</span></td>
-            <td>
-                ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color: var(--accent); margin-right: 10px;">▶ Play</a>` : '—'}
-                ${p.status === 'ready' ? `<button onclick="approveVideo('${p.id}')" style="background: var(--green); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">Approve</button>` : ''}
-            </td>
-        </tr>
-    `).join('');
-}
+                // Load Lessons
+                const lessonRes = await fetch(`${API}/courses`, { credentials: 'include' });
+                if (!lessonRes.ok) throw new Error("Courses endpoint failed");
+                const lessons = await lessonRes.json();
+                
+                console.log("Lessons loaded from API:", lessons); // Debugging line
 
-        const list = document.getElementById('productionsList');
-        if (!prods.items || prods.items.length === 0) {
-            list.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted);">No videos generated yet.</td></tr>`;
-        } else {
-            // (We will update this table in Phase 4)
+                // Handle both { courses: [] } and just []
+                const courseList = lessons.courses || lessons; 
+                
+                document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
+                    courseList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+            } catch (e) {
+                console.error('Failed to load data', e);
+                alert('Data Load Error: ' + e.message + '\nCheck browser console (F12) for details.');
+            }
         }
-
-        // 3. Fetch Lessons
-        const lessonRes = await fetch(`${API}/courses`, { credentials: 'include' });
-        if (!lessonRes.ok) throw new Error(`Lessons failed: ${lessonRes.status}`);
-        const lessons = await lessonRes.json();
-        
-        console.log("Lessons Data Received:", lessons); // Check your browser console!
-
-        // Handle both { courses: [] } and just []
-        const courseList = lessons.courses || lessons; 
-        
-        document.getElementById('lessonSelect').innerHTML = `<option value="">Select a Lesson</option>` + 
-            courseList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-
-    } catch (e) {
-        console.error('Failed to load data:', e);
-        alert('Data Load Error: ' + e.message + '\n\nCheck the browser console (F12) for details.');
-    }
-}
 
         // 4. Generate Video
         async function generateVideo() {
@@ -269,35 +274,37 @@
                 });
                 
                 if (res.ok) {
-                    alert('Video generation started! It will appear in the table shortly.');
+                    alert('Video generation started! Refreshing list...');
                     loadData();
                 } else {
-                    alert('Failed to start generation.');
+                    const err = await res.json();
+                    alert('Failed: ' + (err.error || 'Unknown error'));
                 }
             } catch (e) {
                 alert('Error: ' + e.message);
             }
         }
 
-        async function approveVideo(id) {
-    if (!confirm('Approve this video? It will instantly go live on the Academy student dashboard.')) return;
-    
-    try {
-        const res = await fetch(`${API}/studio/approve/${id}`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        
-        if (res.ok) {
-            alert('✅ Video approved and published to the Academy!');
-            loadData(); // Refresh the table
-        } else {
-            const err = await res.json();
-            alert('Failed: ' + err.error);
-        }
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
+        // 5. Approve Video
+        async function approveVideo(productionId) {
+            if (!confirm('Approve this video? It will instantly become live on the student Academy dashboard.')) return;
+            
+            try {
+                const res = await fetch(`${API}/studio/approve/${productionId}`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (res.ok) {
+                    alert('✅ Video approved and published to the Academy!');
+                    loadData(); // Refresh the table
+                } else {
+                    const err = await res.json();
+                    alert('❌ Failed to approve video: ' + (err.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
         }
 
         function logout() {
