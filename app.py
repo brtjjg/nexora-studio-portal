@@ -60,8 +60,8 @@ def health_check():
     return jsonify({"status": "healthy", "service": "Nexora Studio Brain"}), 200
 
 if __name__ == '__main__':
-    # Ensure the uploads directory exists when the app starts
     os.makedirs(os.path.join(os.getcwd(), 'uploads'), exist_ok=True)
     
-    # Run the app
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Render assigns a dynamic PORT. We must use it.
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
