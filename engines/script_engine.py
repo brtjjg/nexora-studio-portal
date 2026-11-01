@@ -14,7 +14,6 @@ class ScriptEngine:
         sentences = re.split(r'(?<=[.!?]) +', text)
         
         # 3. Group sentences into chunks (scenes). 
-        # Let's aim for roughly 2 sentences per scene.
         scenes = []
         current_chunk = ""
         
@@ -44,17 +43,14 @@ class ScriptEngine:
         self.db.commit()
         print(f"✅ [Script Engine] Successfully created {len(scenes)} scenes for project {project_id}.")
 
-        # 5. Tell the Job Manager we are done with Scripting, and queue Audio
+        # 5. Tell the Job Manager we are done with Scripting, and queue Audio and Graphics
         self.queue_next_step(project_id)
 
     def queue_next_step(self, project_id):
-    from core.job_manager import JobManager
-    jm = JobManager(self.db)
-    # Once script is done, we need Voice and Graphics
-    jm.queue_job(project_id, 'voice')
-    jm.queue_job(project_id, 'graphics')
-    
-    # NEW: Once Voice and Graphics are done, we need to render the final video.
-    # In a real production environment, you would use Celery to wait for the first two.
-    # For this setup, we queue it last, and the Render Engine checks if files exist.
-    jm.queue_job(project_id, 'render')
+        # THE FIX IS HERE: Make sure these lines have 8 spaces (or 2 tabs) before them!
+        from core.job_manager import JobManager
+        jm = JobManager(self.db)
+        
+        jm.queue_job(project_id, 'voice')
+        jm.queue_job(project_id, 'graphics')
+        jm.queue_job(project_id, 'render')
