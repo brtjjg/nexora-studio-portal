@@ -22,7 +22,11 @@ class JobManager:
         engine.process_job(project_id)
         
     elif engine_name == 'graphics':
-        # NEW: Trigger the Graphics Engine!
         from engines.graphics_engine import GraphicsEngine
         engine = GraphicsEngine(self.db)
+        engine.process_job(project_id)
+        
+    elif engine_name == 'render':
+        from engines.rendering_engine import RenderingEngine
+        engine = RenderingEngine(self.db)
         engine.process_job(project_id)
