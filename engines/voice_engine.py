@@ -1,66 +1,46 @@
-import asyncio
-import edge_tts
-import os
-import uuid
+"""Offline speech synthesis. Prefers local espeak-ng; falls back to local pyttsx3."""
+from pathlib import Path
+import shutil
+import subprocess
 
 class VoiceEngine:
-    def __init__(self, db_connection):
-        self.db = db_connection
-        # Create an uploads/audio folder in Termux if it doesn't exist
-        self.output_dir = os.path.join(os.getcwd(), 'uploads', 'audio')
-        os.makedirs(self.output_dir, exist_ok=True)
+    def __init__(self, rate=155, voice=None):
+        self.rate = rate
+        self.voice = voice
 
-    async def _generate_audio(self, text, filepath, voice):
-        """Uses edge-tts to generate an audio file."""
-        communicate = edge_tts.Communicate(text, voice)
-        await communicate.save(filepath)
+    def synthesize(self, text, output_path):
+        if not text.strip():
+            raise ValueError("Cannot synthesize empty narration.")
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
 
-    def process_job(self, project_id):
-        print(f"🎙️ [Voice Engine] Starting audio generation for project {project_id}...")
-        
-        cursor = self.db.cursor()
-        # Get all scenes for this project that need audio
-        cursor.execute("""
-            SELECT id, narration_text FROM studio_scenes 
-            WHERE project_id = %s AND audio_url IS NULL
-        """, (project_id,))
-        scenes = cursor.fetchall()
+        espeak = shutil.which("espeak-ng") or shutil.which("espeak")
+        if espeak:
+            command = [espeak, "-s", str(self.rate), "-w", str(output)]
+            if self.voice:
+                command += ["-v", self.voice]
+            command.append(text)
+            subprocess.run(command, check=True, capture_output=True, text=True)
+            return str(output)
 
-        if not scenes:
-            print("⚠️ [Voice Engine] No scenes found to generate audio for.")
-            return
-
-        # Default voice (you can change this later to match the Studio UI dropdown)
-        voice = "en-US-AriaNeural" 
-
-        for scene in scenes:
-            scene_id = scene[0]
-            text = scene[1]
-            
-            # Generate a unique filename for the audio
-            filename = f"{scene_id}.mp3"
-            filepath = os.path.join(self.output_dir, filename)
-            
-            print(f"   -> Generating voice for Scene {scene_id[:8]}...")
-            
-            # Run the async TTS function
-            try:
-                asyncio.run(self._generate_audio(text, filepath, voice))
-                
-                # Save the relative path to the database
-                db_path = f"uploads/audio/{filename}"
-                cursor.execute("""
-                    UPDATE studio_scenes SET audio_url = %s WHERE id = %s
-                """, (db_path, scene_id))
-                self.db.commit()
-            except Exception as e:
-                print(f"❌ [Voice Engine] Error generating audio for scene {scene_id}: {e}")
-
-        print(f"✅ [Voice Engine] Finished generating {len(scenes)} audio files.")
-        
-        # Mark job as done
-        cursor.execute("""
-            UPDATE studio_jobs SET status = 'done' 
-            WHERE project_id = %s AND engine_name = 'voice'
-        """, (project_id,))
-        self.db.commit()
+        try:
+            import pyttsx3
+            engine = pyttsx3.init()
+            engine.setProperty("rate", self.rate)
+            if self.voice:
+                voices = engine.getProperty("voices")
+                match = next((v.id for v in voices if self.voice.lower() in
+                              (v.id + " " + v.name).lower()), None)
+                if match:
+                    engine.setProperty("voice", match)
+            engine.save_to_file(text, str(output))
+            engine.runAndWait()
+            engine.stop()
+            if not output.exists() or output.stat().st_size == 0:
+                raise RuntimeError("Local pyttsx3 engine did not create an audio file.")
+            return str(output)
+        except ImportError as exc:
+            raise RuntimeError(
+                "No offline speech engine found. Install espeak-ng on the host "
+                "or install pyttsx3 and a local OS voice. No cloud voice API is used."
+            ) from exc
