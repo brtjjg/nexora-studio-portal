@@ -1,67 +1,57 @@
-from flask import Flask, request, jsonify, send_from_directory
-import psycopg2
+"""Nexora Studio local production API. All content generation runs on this host."""
+from flask import Flask, request, jsonify, send_from_directory, abort
+from werkzeug.utils import safe_join
 import os
-from core.orchestrator import ProductionCore
+from pathlib import Path
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
+DATABASE_URL = os.environ.get("DATABASE_URL")
+UPLOADS_DIR = Path(os.environ.get("STUDIO_OUTPUT_DIR", "uploads/videos")).resolve()
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Use the external database URL from your environment variables.
-# If you are testing locally, it falls back to the default local string.
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", 
-    "postgresql://postgres:password@localhost:5432/nexora_studio"
-)
 
 def get_db():
-    """Establishes connection to the external database."""
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not configured")
+    import psycopg2
     return psycopg2.connect(DATABASE_URL)
 
-@app.route('/api/receive-lesson', methods=['POST'])
-def receive_lesson():
-    """Entry point for the Academy to send new lessons to the Studio."""
-    data = request.json
-    lesson_id = data.get('lesson_id')
-    title = data.get('title')
-    notes = data.get('notes')
 
-    if not lesson_id or not title or not notes:
-        return jsonify({"error": "Missing required fields: lesson_id, title, or notes"}), 400
-
-    try:
-        db = get_db()
-        core = ProductionCore(db)
-        
-        # Trigger the Production Brain
-        project_id = core.receive_lesson(lesson_id, title, notes)
-        
-        db.close()
-        return jsonify({
-            "success": True, 
-            "project_id": project_id, 
-            "message": "Production Core initiated."
-        }), 200
-        
-    except Exception as e:
-        print(f"❌ [API Error] {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/uploads/<path:filename>', methods=['GET'])
-def serve_uploads(filename):
-    """
-    Serves the generated audio, images, and final videos to the Vercel frontend.
-    Example URL: https://nexora-studio-brain.onrender.com/uploads/videos/final.mp4
-    """
-    uploads_dir = os.path.join(os.getcwd(), 'uploads')
-    return send_from_directory(uploads_dir, filename)
-
-@app.route('/api/health', methods=['GET'])
+@app.get('/api/health')
 def health_check():
-    """Simple endpoint for Render to check if the service is alive."""
-    return jsonify({"status": "healthy", "service": "Nexora Studio Brain"}), 200
+    return jsonify({"status": "healthy", "service": "Nexora Studio Brain",
+                    "generation": "local_rule_based", "external_ai_apis": False})
+
+
+@app.post('/api/receive-lesson')
+def receive_lesson():
+    data = request.get_json(silent=True) or {}
+    lesson_id, title, notes = data.get('lesson_id'), data.get('title'), data.get('notes')
+    if not all(isinstance(v, str) and v.strip() for v in (lesson_id, title, notes)):
+        return jsonify({"error": "lesson_id, title and notes are required strings"}), 400
+    db = None
+    try:
+        from core.orchestrator import ProductionCore
+        db = get_db()
+        project_id = ProductionCore(db, output_root=UPLOADS_DIR).receive_lesson(
+            lesson_id.strip(), title.strip(), notes.strip())
+        return jsonify({"success": True, "project_id": project_id,
+                        "status": "ready_for_review",
+                        "message": "Video rendered locally and is awaiting admin approval."}), 201
+    except Exception as exc:
+        app.logger.exception("Lesson production failed")
+        return jsonify({"error": "Production failed", "detail": str(exc)}), 500
+    finally:
+        if db is not None:
+            db.close()
+
+
+@app.get('/uploads/videos/<path:filename>')
+def serve_video(filename):
+    return send_from_directory(UPLOADS_DIR, filename, as_attachment=False)
+
 
 if __name__ == '__main__':
-    os.makedirs(os.path.join(os.getcwd(), 'uploads'), exist_ok=True)
-    
-    # Render assigns a dynamic PORT. We must use it.
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
