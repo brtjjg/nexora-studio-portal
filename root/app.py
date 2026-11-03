@@ -1,4 +1,4 @@
-"""Nexora Studio local production API. All content generation runs on this host."""
+root"""Nexora Studio local production API. All content generation runs on this host."""
 from flask import Flask, request, jsonify, send_from_directory, abort
 from werkzeug.utils import safe_join
 import os
