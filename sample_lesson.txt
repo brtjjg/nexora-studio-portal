@@ -1,0 +1,5 @@
+A computer is an electronic device that accepts data, processes it, stores information, and produces output.
+The main parts of a computer system include hardware and software.
+Hardware refers to the physical components that can be touched, such as the keyboard, monitor, mouse, and processor.
+Software is a collection of programs and instructions that tell the computer what to do.
+The central processing unit is often called the brain of the computer because it executes instructions and coordinates operations.
